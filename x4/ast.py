@@ -1,11 +1,16 @@
-"""ast.py"""
+"""ast.py
+
+I thought about how Julia made everything Expressions.
+I thought about whether I wanted to do that.
+I think doing things this way might keep things easy and simple.
+"""
 
 """
 # What I think the x4 language is going to look like in my head.
 
 include prelude
 
-class House(size Number)
+class House Object(size Number)
 
 Main() {
   var house = House(add(4, 5));
@@ -33,21 +38,37 @@ Print(arg Number) {
 """
 
 class Ast(object):
-  pass
+
+  def __init__(self, *args):
+    for name, arg in zip(self.attributes, args):
+      setattr(self, name, arg)
+
+  def __repr__(self):
+    return '%s(%s)' % (type(self).__name__, ', '.join(repr(getattr(self, attr)) for attr in self.attributes))
+
+  def __eq__(self, other):
+    return type(self) == type(other) and all(getattr(self, attr) == getattr(other, attr) for attr in self.attributes)
+
+
+class Module(Ast):
+  attributes = (
+      'classes',             # [Class]
+      'functions',           # [Function]
+  )
 
 
 class Class(Ast):
   attributes = (
       'name',                # str
-      'supers',              # [str]
-      'members',             # [str]
+      'supers',              # {str}
+      'members',             # {str}
   )
 
 
 class Function(Ast):
   attributes = (
       'name',                # str
-      'arguments',           # [(str, str)]
+      'arguments',           # [(str, str|None)]
       'body',                # Statement
   )
 
@@ -91,6 +112,14 @@ class While(Statement):
   )
 
 
+class IfElse(Statement):
+  attributes = (
+      'condition',           # Expression
+      'first',               # Statement
+      'second',              # Statement
+  )
+
+
 class Expression(Ast):
   pass
 
@@ -98,7 +127,7 @@ class Expression(Ast):
 class MethodInvocation(Expression):
   attributes = (
       'name',                # str
-      'arguments',           # [Expression]
+      'arguments',           # [(Expression, str|None)]
   )
 
 
