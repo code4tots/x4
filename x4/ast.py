@@ -25,7 +25,7 @@ Add(n Number, m Number) = n + m;
 
 Print(arg, args...) {
   Print(arg);
-  for (var arg : args) {
+  for (var arg in args) {
     Print(arg);
   }
 }

@@ -3,15 +3,19 @@
 #define TYPE_STR 2
 #define TYPE_LIST 3
 
-typedef struct ObjectStub ObjectStub;
-struct ObjectStub {
-  int type;
-};
+typedef Object Object;
+typedef List List;
+typedef String String;
 
-typedef struct Object Object;
 struct Object {
   int type;
-  ObjectStub buffer[1];
+  union {
+    List *list;
+    String *string;
+    Object **attrs;
+    long integer;
+    double number;
+  } value;
 };
 
 int main() {
