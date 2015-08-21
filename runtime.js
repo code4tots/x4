@@ -62,16 +62,29 @@ function CalculateMethodScore(method) {
   return score
 }
 
-function DeclareMethod(name, argtypes, impl) {
+function DeclareMethod(name, argtypes, varargtype, impl) {
   METHODS.push({
     name: name,
     argtypes: argtypes,
+    varargtype: varargtype,
     impl: impl
   })
 }
 
 function InvokeMethod(name, args) {
-  return FindMethod(name, args).impl.apply(null, args)
+  var method = FindMethod(name, args), namedargs, varargs, result
+
+  if (method === null)
+    throw "No method matching " + name + " with given args " + args.length
+
+  if (method.varargtype) {
+    namedargs = args.slice(0, method.argtypes.length)
+    varargs = args.slice(method.argtypes.length, args.length)
+    args = namedargs.concat({__type__: 'List', __val__:[varargs.slice(0)]})
+  }
+  result = method.impl.apply(null, args)
+
+  return result === undefined ? {__type__: 'None'} : result
 }
 
 function FindMethod(name, args) {
@@ -91,24 +104,31 @@ function FindMethod(name, args) {
 }
 
 function MethodMatches(method, name, types) {
-  var i
+  var i, varcls
 
   if (method.name !== name)
     return false
 
-  if (method.argtypes.length !== types.length)
+  if (method.argtypes.length !== types.length && !method.varargtype || method.argtypes.length > types.length)
     return false
 
-  for (i = 0; i < types.length; i++) {
+  for (i = 0; i < method.argtypes.length; i++)
     if (!IsSubclass(FindClass(types[i]), FindClass(method.argtypes[i])))
       return false
+
+  if (method.varargtype) {
+    varcls = FindClass(method.varargtype)
+    for (i = method.argtypes.length; i < types.length; i++) {
+      if (!IsSubclass(FindClass(types[i]), varcls))
+        return false
+    }
   }
 
   return true
 }
 
 DeclareClass('Object', [], [])
-DeclareClass('None', [], [])
+DeclareClass('None', ['Object'], [])
 DeclareClass('ValPrintable', ['Object'], [])
 DeclareClass('Number', ['Object', 'ValPrintable'], [])
 DeclareClass('Int', ['Number'], ['__val__'])
@@ -116,35 +136,53 @@ DeclareClass('Float', ['Number'], ['__val__'])
 DeclareClass('String', ['Number'], ['__val__'])
 DeclareClass('List', ['Object'], ['__val__'])
 
-DeclareMethod('Print', ['ValPrintable'], function(val) {
+DeclareMethod('Print', ['ValPrintable'], undefined, function(val) {
   process.stdout.write(val.__val__.toString())
 })
 
-DeclareMethod('Print', ['List'], function(val) {
-  var list = val.__val__
+DeclareMethod('Print', ['None'], undefined, function(val) {
+  process.stdout.write('None')
+})
+
+DeclareMethod('Print', ['List'], undefined, function(val) {
+  var list = val.__val__, i
 
   process.stdout.write('[')
-  for (var i = 0; i < list.length; i++) {
+  for (i = 0; i < list.length; i++) {
     InvokeMethod('Print', [list[i]])
     process.stdout.write(', ')
   }
   process.stdout.write(']')
 })
 
-DeclareMethod('Size', ['List'], function(list) {
+DeclareMethod('Print', ['Object', 'Object'], 'Object', function(arg1, arg2, rest) {
+  var i
+
+  InvokeMethod('Print', [arg1])
+  InvokeMethod('Print', [arg2])
+  for (i = 0; i < rest.__val__.length; i++) {
+    InvokeMethod('Print', [rest.__val__[i]])
+  }
+
+})
+
+DeclareMethod('Size', ['List'], undefined, function(list) {
   return {__type__: 'Int', __val__: list.__val__.length}
 })
 
-DeclareMethod('Append', ['List', 'Object'], function(list, item) {
+DeclareMethod('Append', ['List', 'Object'], undefined, function(list, item) {
   list.__val__.push(item)
   return list
 })
 
-// console.log(FindClass('List'))
-// console.log(IsSubclass(FindClass('List'), FindClass('ValPrintable')))
-// console.log(InvokeMethod('Size', [{__type__: 'List', __val__: []}]))
 InvokeMethod('Print', [{__type__: 'Int', __val__: 5}])
 InvokeMethod('Print', [{__type__: 'List', __val__: [
   {__type__: 'Int', __val__: 5}
 ]}])
 
+InvokeMethod('Print', [
+  {__type__: 'None'},
+  {__type__: 'None'},
+  {__type__: 'None'},
+  {__type__: 'None'}
+])
