@@ -1,0 +1,52 @@
+## Declare native prelude code
+;n r"""
+
+"""
+
+## Declare native/builtin classes
+;nc Object()
+
+;nc Number Object() # Data structures
+;nc String Object()
+;nc List Object()
+;nc Dictionary Object()
+
+;nc File Object() # World
+
+## Declare native/builtin variables
+
+;nv stdin
+;nv stdout
+
+## Declare native/builtin functions
+
+;nf Print(a String)
+
+;nf ToString(a Number) r"""
+  [](Arguments args) {
+
+  }
+"""
+;nf ToString(a String)
+;nf ToString(a List)
+;nf ToString(a Dictionary)
+
+;nf __add__(a Number, b Number)
+;nf __subtract__(a Number, b Number)
+;nf __multiply__(a Number, b Number)
+;nf __divide__(a Number, b Number)
+;nf __modulo__(a Number, b Number)
+
+;nf __add__(a List, b List)
+;nf __multiply__(a List, n Number)
+
+;nf __add__(a String, b String)
+;nf __modulo__(a String, b List)
+
+;nf Append(a List, b Object)
+
+## Standard library
+
+;f Print(a Object) {
+  ToString(a)
+}
