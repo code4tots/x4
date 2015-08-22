@@ -1,55 +1,35 @@
+/* gcc -Wall -Werror -Wpedantic --std=c89 runtime.c  */
 #include <stdarg.h>
 #include <stdlib.h>
-#define TYPE_INT 0
-#define TYPE_FLOAT 1
-#define TYPE_STR 2
-#define TYPE_LIST 3
 
-typedef struct Object Object;
-typedef struct List List;
-typedef struct String String;
+#define MAX_NUM_CLASSES 100
+#define MAX_NUM_METHODS 100
+#define MAX_ARG_LEN 20
 
-struct Object {
-  int type;
-  union {
-    List *list;
-    String *string;
-    Object **attrs;
-    long integer;
-    double number;
-  } value;
-};
+int num_classes;
+int supers_table[MAX_NUM_CLASSES][MAX_NUM_CLASSES];
+int class_member_index_table[MAX_NUM_CLASSES][MAX_NUM_ATTRIBUTES];
+int class_members_table[MAX_NUM_CLASSES][MAX_NUM_ATTRIBUTES];
 
-typedef struct Arguments Arguments;
-struct Arguments {
-  int argc;
-  Object **argv;
-};
-
-extern Object *(*METHOD_TABLE[])(Arguments*);
-
-Object *InvokeMethod(int method, int argc, ...) {
+/* classes are determined by two lists of things:
+ * its super classes, and its attributes */
+void register_class(int nsuper, int nmember, ...) {
   va_list ap;
-  Arguments args;
-  int i;
-  Object *result;
+  int cls = num_classes++, i, mp = 0;
 
-  args.argc = argc;
-  args.argv = (Object**) malloc(sizeof(Object*) * argc);
+  va_start(ap, nmember);
 
-  va_start(ap, argc);
-  for (i = 0; i < argc; i++)
-    args.argv[i] = va_arg(ap, Object*);
+  for (i = 0; i < nsuper; i++)
+    supers_table[cls][va_arg(ap, int)] = 1;
+
+  for (i = 0; i < nmember; i++) {
+    int member = va_arg(ap, int);
+
+    class_member_index_table[cls][member] = mp;
+  }
+
   va_end(ap);
-
-  result = METHOD_TABLE[method](&args);
-
-  free(args.argv);
-
-  return result;
 }
-
-Object *(*METHOD_TABLE[])() = {0, 0, 0};
 
 int main() {
 }
